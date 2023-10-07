@@ -1,0 +1,67 @@
+{% extends "bases/base.html" %} {% load static %} {% block 'head' %}
+<link href="{% static 'exams/css/css.css' %}" rel="stylesheet" />
+{% endblock 'head' %} {% block 'conteudo' %}
+<br />
+<br />
+<div class="container">
+  <div class="row">
+    <div class="col-md">
+      <h3 class="font-destaque">Solicitar exames</h3>
+
+      <form action="{% url 'request_exams' %}" method="POST">
+        {% csrf_token %}
+        <label for="">Selecione os exames para realizar</label>
+        <select class="select form-control bg-select" multiple name="exams">
+          {% for exam in type_exames_list%}
+          <option class="opt" value="{{exam.id}}">{{exam.name}}</option>
+          {% endfor %}
+        </select>
+        <br />
+        <input
+          type="submit"
+          class="btn-default tamanho-2"
+          name="ultimo_nome"
+          value="Solicitar exames"
+        />
+      </form>
+    </div>
+
+    <div class="col-md-2"></div>
+
+    <div class="col-md card">
+        {% if request_for_exams %}
+        {% for exam in request_for_exams %}
+            <div style="font-size: 20px; font-weight: bold">
+                    {% if exam.available %}
+                        <img src="{% static 'exams/img/check.png' %}" />
+                    {% else %}                        
+                        <img src="{% static 'exams/img/exit.png' %}" />
+                    {% endif %} {{exam.name}}
+                <span class="previa-preco">R$ {{exam.price}}</span>
+            </div>
+        {%endfor%}
+
+      <hr style="color: white" />
+      <div>
+        <label>Total: </label>
+        <label class="previa-preco">R$ {{price_total}}</label>
+      </div>
+      <br />
+
+      <h5>Data: {{ date_exams }}</h5>
+      <br />
+
+      <form action="{% url "finalize_order" %}" method="POST">{% csrf_token %}
+            {% for exam in request_for_exams %}
+                <input type="hidden" value="{{exam.id}}" name="exams"/>
+            {% endfor %}
+        <button class="btn-secundario">Fechar pedido</button>
+      </form>
+      {% else %}
+            <h3><strong> Nenhum exame selecionado </strong></h3>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{% endblock 'conteudo' %}

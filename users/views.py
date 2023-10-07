@@ -19,13 +19,15 @@ def register(request):
 
         if not password == password_conformation:
             messages.add_message(
-                request, constants.ERROR, "senhas divergentes, digite novamente!"
+                request, constants.ERROR,
+                "senhas divergentes, digite novamente!"
             )
             return redirect("/users/register/")
 
         if len(password) < 6:
             messages.add_message(
-                request, constants.ERROR, "senha deve ter o minimo 6 caracteres!"
+                request, constants.ERROR,
+                "senha deve ter o minimo 6 caracteres!"
             )
             return redirect("/users/register/")
 
@@ -40,11 +42,11 @@ def register(request):
             messages.add_message(
                 request, constants.SUCCESS, "Usuário Cadastrado com sucesso"
             )
-            print(user)
 
-        except:
+        except Exception as e:
             messages.add_message(
-                request, constants.ERROR, "Erro interno, contate um admistrador"
+                request, constants.ERROR,
+                "Erro interno: " + str(e)
             )
             return redirect("/users/register/")
 
