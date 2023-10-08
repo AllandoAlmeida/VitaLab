@@ -67,7 +67,7 @@ def userlogin(request):
             messages.add_message(
                 request, constants.SUCCESS, "Login realizado com sucesso"
             )
-            return redirect("/users/register/")
+            return redirect("request_exams")
         else:
             messages.add_message(
                 request, constants.ERROR, "Username ou senha inválidos!"
