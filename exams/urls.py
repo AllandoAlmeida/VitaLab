@@ -21,4 +21,14 @@ urlpatterns = [
        views.exam_with_password,
        name="exam_with_password"
     ),
+    path(
+       'generate_medical_access/',
+       views.generate_medical_access,
+       name="generate_medical_access"
+    ),
+    path(
+       'doctor_access/<str:token>',
+       views.doctor_access,
+       name="doctor_access"
+    ),
 ]

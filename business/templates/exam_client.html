@@ -1,0 +1,73 @@
+{% extends "bases/base.html" %}
+{% load static %}
+
+{% block 'head' %}
+    <link href="{% static 'exams/css/css.css' %}" rel="stylesheet">
+    <link href="{% static 'exams/css/manage_orders.css' %}" rel="stylesheet">
+    <link href="{% static 'exams/css/manage_exams.css' %}" rel="stylesheet">
+{% endblock 'head' %}
+
+
+{% block 'conteudo' %}
+    <br>
+    <div class="container">
+        {% if messages %}
+            <br>
+            {% for message in messages %}
+            <div class="alert {{ message.tags }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+        <div class="row">
+        <h3 class="font-destaque">{{exam.user.get_full_name}}</h3>
+        <p>{{exam.user.email}}</p>
+        <br>
+        <div class="row">
+            <div class="col-md-6">
+                <form action="{% url "change_exam_data" exam.id %}" method="POST" enctype="multipart/form-data"> {% csrf_token %}
+                    <input type="FILE" value="Alterar PDF" class="btn-secundario" name="result">
+               
+                    <br>
+                    <br>
+                    {% if exam.result %}
+                        <a style="width: 100%;" href="{{exam.result.url}}" target="__blank"><div  style="width: 100%;" id="pdf-container"></div></a>
+                    {% endif %}
+            </div>
+            <div class="col-md-6">
+                <h3>Status</h3>
+
+                <select name="status" id="" class="form-select">
+                    <option style="color: black;" {% if exam.status == 'E' %}selected{% endif %} value="E">Em análise</option>
+                    <option style="color: black;" {% if exam.status == 'F' %}selected{% endif %} value="F">Finalizado</option>
+                </select>
+                <br>
+                <input type="checkbox" name="requer_password" id="" {% if exam.requer_password %}checked{% endif %}>   <label for="">Requer senha para acessar ?</label>
+                <br>
+                <br>
+                <input type="submit" value="Salvar" class="btn-default">
+                </form>
+                <a style="text-decoration: none;" href="{% url "generate_exam_password" exam.id %}" class="btn-secundario">Gerar senha</a>
+            </div>
+        </div>        
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.min.js"></script>
+    <script>
+
+        const container = document.getElementById('pdf-container');
+
+        pdfjsLib.getDocument('{% url "proxy_pdf" exam.id %}').promise.then(pdf => {
+            pdf.getPage(1).then(page => {
+                const canvas = document.createElement('canvas');
+                const context = canvas.getContext('2d');
+                const viewport = page.getViewport({ scale: 0.6 });
+
+                canvas.width = viewport.width;
+                canvas.height = viewport.height;
+
+                page.render({ canvasContext: context, viewport }).promise.then(() => {
+                    container.appendChild(canvas);
+                });
+            });
+        });
+    </script>''
+
+{% endblock 'conteudo' %}

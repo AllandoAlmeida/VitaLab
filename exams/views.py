@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
-from .models import RequestForExams, TypeExams, ExamRequest
+from .models import MedicalAccess, RequestForExams, TypeExams, ExamRequest
 from django.utils import timezone
 from datetime import datetime
 from django.contrib import messages
@@ -13,7 +13,8 @@ def request_exams(request):
     type_exams = TypeExams.objects.all()
     if request.method == "GET":
         return render(
-            request, "request_exams.html",
+            request,
+            "request_exams.html",
             {"type_exames_list": type_exams}
         )
     elif request.method == "POST":
@@ -75,9 +76,10 @@ def finalize_order(request):
 def manage_orders(request):
     orders_exams = RequestForExams.objects.filter(user=request.user)
 
-    return render(request, "manage_orders.html", {
-        "orders_exams":
-            orders_exams}
+    return render(
+        request,
+        "manage_orders.html",
+        {"orders_exams": orders_exams}
     )
 
 
@@ -125,11 +127,94 @@ def exam_with_password(request, exam_id):
     elif request.method == "POST":
         password = request.POST.get("password")
         if password == exam.password:
-            return redirect(exam.result.url)
+            if exam.result:
+                return redirect(exam.result.url)
+            else:
+                messages.add_message(
+                    request,
+                    constants.ERROR,
+                    "O exame não está disponível para download.",
+                )
         else:
             messages.add_message(
                 request,
                 constants.ERROR,
                 "Senha Inválida",
             )
-            return redirect(f"/exams/exam_with_password/{exam_id}")
+    return redirect(f"/exams/exam_with_password/{exam_id}")
+
+
+@login_required
+def generate_medical_access(request):
+    if request.method == "GET":
+        medical_access = MedicalAccess.objects.filter(user=request.user)
+        return render(
+            request,
+            "generate_medical_access.html",
+            {"medical_access": medical_access}
+        )
+    elif request.method == "POST":
+        identification = request.POST.get("identification")
+        access_time = request.POST.get("access_time")
+        initial_exams_date = request.POST.get("initial_exams_date")
+        data_exams_finals = request.POST.get("data_exams_finals")
+
+        medical_access = MedicalAccess(
+            user=request.user,
+            identification=identification,
+            access_time=access_time,
+            initial_exams_date=initial_exams_date,
+            data_exams_finals=data_exams_finals,
+            created_in=datetime.now(),
+        )
+
+        medical_access.save()
+
+        messages.add_message(
+            request,
+            constants.SUCCESS,
+            "Acesso gerado com sucesso"
+        )
+        return redirect("/exams/generate_medical_access")
+
+
+""" def doctor_access(request, token):
+    doctor_access = MedicalAccess.objects.get(token=token)
+    if doctor_access.status == "Expirado":
+        messages.add_message(
+            request,
+            constants.ERROR,
+            "Token expirado, solicite novo Token.",
+        )
+        return redirect("/users/login")
+
+    orders = RequestForExams.objects.filter(
+        user=doctor_access.user
+        ).filter(
+        date__gte=doctor_access.data_exams_finals
+        ).filter(
+            date__lte=doctor_access.data_exams_finals
+        )
+    print(orders)
+    return HttpResponse(doctor_access.user) """
+
+
+def doctor_access(request, token):
+    doctor_access = MedicalAccess.objects.get(token=token)
+    if doctor_access.status == "Expirado":
+        messages.add_message(
+            request,
+            constants.ERROR,
+            "Token expirado, solicite um novo Token.",
+        )
+        return redirect("/users/login")
+
+    # Use Q objects para construir uma consulta OR entre as datas
+    orders = RequestForExams.objects.filter(
+        user=doctor_access.user,
+        date__gte=doctor_access.initial_exams_date,
+        date__lte=doctor_access.data_exams_finals
+    )
+
+    print(orders)
+    return render(request, 'doctor_access.html', {'ordes': orders})
